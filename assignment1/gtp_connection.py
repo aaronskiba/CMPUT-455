@@ -297,14 +297,43 @@ class GtpConnection:
             board_color = args[0].lower()
             board_move = args[1]
             color = color_to_int(board_color)
+
+            # check for "wrong color"
+            if color != self.board.current_player:
+                self.respond("Illegal Move: {} wrong color".format(board_move))
+                return
+
+            # check for "wrong coordinate" via "pass"
             if args[1].lower() == "pass":
-                self.board.play_move(PASS, color)
-                self.board.current_player = opponent(color)
-                self.respond()
+                self.respond("Illegal Move: {} wrong coordinate".format(board_move))
+                # self.board.play_move(PASS, color)
+                # self.board.current_player = opponent(color)
+                # self.respond()
                 return
             coord = move_to_coord(args[1], self.board.size)
             move = coord_to_point(coord[0], coord[1], self.board.size)
+
+            # check for "occupied"
+            empty_points = self.board.get_empty_points()
+            if move not in empty_points:
+                self.respond("Illegal Move: {}".format(board_move + " occupied"))
+                return
+            
             if not self.board.play_move(move, color):
+                # check for "capture"
+                opp_color = opponent(color)
+                neighbors = self.board._neighbors(move)
+                for nb in neighbors:
+                    nb_color = self.board.get_color(nb)
+                    if nb_color == opp_color and self.board._is_capture(nb):
+                        self.respond("Illegal Move: {}".format(board_move + " capture"))
+                        return
+                # check for "suicide"
+                block = self.board._block_of(move)
+                if not self.board._has_liberty(block):
+                    self.respond("Illegal Move: {}".format(board_move + " suicide"))
+                    return
+
                 self.respond("Illegal Move: {}".format(board_move))
                 return
             else:
