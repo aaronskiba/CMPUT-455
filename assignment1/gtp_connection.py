@@ -280,19 +280,8 @@ class GtpConnection:
     Assignment 1 - game-specific commands you have to implement or modify
     ==========================================================================
     """
-    def gogui_rules_final_result_cmd(self, args):
-        """ Implement this function for Assignment 1 """
-        self.respond("unknown")
 
-    def gogui_rules_legal_moves_cmd(self, args):
-        """ Implement this function for Assignment 1
-        If the game is over, return an empty list. Otherwise, return
-        a list of all empty points on the board which are legal moves
-        for the current player: moves that do not capture stones or
-        commit suicide. Moves should be in sorted order. The coordinates
-        should be capitalized; i.e. 'A1' instead of 'a1'.
-        """
-
+    def get_sorted_gtp_moves(self):
         color = self.board.current_player
         moves: List[GO_POINT] = GoBoardUtil.generate_legal_moves(self.board, color)
         gtp_moves: List[str] = []
@@ -300,6 +289,35 @@ class GtpConnection:
             coords: Tuple[int, int] = point_to_coord(move, self.board.size)
             gtp_moves.append(format_point(coords))
         sorted_moves = " ".join(sorted(gtp_moves))
+        return sorted_moves
+
+
+    def gogui_rules_final_result_cmd(self, args):
+        """
+        Implement this function for Assignment 1
+        Here, the answers black, white should only be given if the game
+        is over. The answer unknown should always be returned if this
+        command is called for a board where the game is not over yet.
+        """
+        sorted_moves = self.get_sorted_gtp_moves()
+        if sorted_moves:
+            self.respond("unknown")
+        else:
+            # get int representation of opponent's color
+            winning_int = opponent(self.board.current_player)
+            winning_color = int_to_color(winning_int)
+            self.respond(winning_color)
+
+    def gogui_rules_legal_moves_cmd(self, args):
+        """
+        Implement this function for Assignment 1
+        If the game is over, return an empty list. Otherwise, return
+        a list of all empty points on the board which are legal moves
+        for the current player: moves that do not capture stones or
+        commit suicide. Moves should be in sorted order. The coordinates
+        should be capitalized; i.e. 'A1' instead of 'a1'.
+        """
+        sorted_moves = self.get_sorted_gtp_moves()
         self.respond(sorted_moves)
 
     def play_cmd(self, args: List[str]) -> None:
@@ -434,3 +452,8 @@ def color_to_int(c: str) -> int:
     """convert character to the appropriate integer code"""
     color_to_int = {"b": BLACK, "w": WHITE, "e": EMPTY, "BORDER": BORDER}
     return color_to_int[c]
+
+def int_to_color(i: int) -> str:
+    """convert integer code to the appropriate color"""
+    int_to_color = {BLACK: "black", WHITE: "white", EMPTY: "e", BORDER: "BORDER"}
+    return int_to_color[i]
