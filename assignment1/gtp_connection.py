@@ -327,16 +327,17 @@ class GtpConnection:
         try:
             board_color = args[0].lower()
             board_move = args[1]
+            color_and_board_move = '"'+ board_color + " " + board_move + '"'
             color = color_to_int(board_color)
 
             # check for "wrong color"
             if color != self.board.current_player:
-                self.respond("Illegal Move: {} wrong color".format(board_move))
+                self.respond("Illegal Move: {} wrong color".format(color_and_board_move))
                 return
 
             # check for "wrong coordinate" via "pass"
             if args[1].lower() == "pass":
-                self.respond("Illegal Move: {} wrong coordinate".format(board_move))
+                self.respond("Illegal Move: {} wrong coordinate".format(color_and_board_move))
                 # self.board.play_move(PASS, color)
                 # self.board.current_player = opponent(color)
                 # self.respond()
@@ -347,7 +348,7 @@ class GtpConnection:
             # check for "occupied"
             empty_points = self.board.get_empty_points()
             if move not in empty_points:
-                self.respond("Illegal Move: {}".format(board_move + " occupied"))
+                self.respond("Illegal Move: {}".format(color_and_board_move + " occupied"))
                 return
             
             if not self.board.play_move(move, color):
@@ -357,12 +358,12 @@ class GtpConnection:
                 for nb in neighbors:
                     nb_color = self.board.get_color(nb)
                     if nb_color == opp_color and self.board._is_capture(nb):
-                        self.respond("Illegal Move: {}".format(board_move + " capture"))
+                        self.respond("Illegal Move: {}".format(color_and_board_move + " capture"))
                         return
                 # check for "suicide"
                 block = self.board._block_of(move)
                 if not self.board._has_liberty(block):
-                    self.respond("Illegal Move: {}".format(board_move + " suicide"))
+                    self.respond("Illegal Move: {}".format(color_and_board_move + " suicide"))
                     return
 
                 self.respond("Illegal Move: {}".format(board_move))
@@ -385,6 +386,9 @@ class GtpConnection:
         if self.board.is_legal(move, color):
             self.board.play_move(move, color)
             self.respond(move_as_string)
+            
+        elif move_as_string == "PASS":
+            self.respond("resign")
         else:
             self.respond("Illegal move: {}".format(move_as_string))
 
